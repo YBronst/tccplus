@@ -9,125 +9,108 @@
 #import <Foundation/Foundation.h>
 #import <dlfcn.h>
 
+// Указатели на приватные функции TCC
 int (*_TCCAccessSetForBundle)(CFStringRef, CFBundleRef);
 int (*_TCCAccessResetForBundle)(CFStringRef, CFBundleRef);
 
-void print_help() {
-    printf("tccplus [add/reset] SERVICE [BUNDLE_ID]\n"
-                    "Services: \n"
-                    " - All \n"
-                    " - Accessibility \n"
-                    " - AddressBook \n"
-                    " - AppleEvents \n"
-                    " - Calendar \n"
-                    " - Camera \n"
-                    " - ContactsFull \n"
-                    " - ContactsLimited \n"
-                    " - DeveloperTool \n"
-                    " - Facebook \n"
-                    " - LinkedIn \n"
-                    " - ListenEvent \n"
-                    " - Liverpool \n"
-                    " - Location \n"
-                    " - MediaLibrary \n"
-                    " - Microphone \n"
-                    " - Motion \n"
-                    " - Photos \n"
-                    " - PhotosAdd \n"
-                    " - PostEvent \n"
-                    " - Reminders \n"
-                    " - ScreenCapture \n"
-                    " - ShareKit \n"
-                    " - SinaWeibo \n"
-                    " - Siri \n"
-                    " - SpeechRecognition \n"
-                    " - SystemPolicyAllFiles \n"
-                    " - SystemPolicyDesktopFolder \n"
-                    " - SystemPolicyDeveloperFiles \n"
-                    " - SystemPolicyDocumentsFolder \n"
-                    " - SystemPolicyDownloadsFolder \n"
-                    " - SystemPolicyNetworkVolumes \n"
-                    " - SystemPolicyRemovableVolumes \n"
-                    " - SystemPolicySysAdminFiles \n"
-                    " - TencentWeibo \n"
-                    " - Twitter \n"
-                    " - Ubiquity \n"
-                    " - Willow \n");
+// Исправлено: добавлен void в аргументы для соответствия современным стандартам C
+void print_help(void) {
+    const char *services[] = {
+        "All", "Accessibility", "AddressBook", "AppleEvents", "Calendar",
+        "Camera", "ContactsFull", "ContactsLimited", "DeveloperTool",
+        "Facebook", "LinkedIn", "ListenEvent", "Liverpool", "Location",
+        "MediaLibrary", "Microphone", "Motion", "Photos", "PhotosAdd",
+        "PostEvent", "Reminders", "ScreenCapture", "ShareKit", "SinaWeibo",
+        "Siri", "SpeechRecognition", "SystemPolicyAllFiles",
+        "SystemPolicyDesktopFolder", "SystemPolicyDeveloperFiles",
+        "SystemPolicyDocumentsFolder", "SystemPolicyDownloadsFolder",
+        "SystemPolicyNetworkVolumes", "SystemPolicyRemovableVolumes",
+        "SystemPolicySysAdminFiles", "TencentWeibo", "Twitter",
+        "Ubiquity", "Willow"
+    };
+    
+    printf("Usage: tccplus [add/reset] SERVICE [BUNDLE_ID]\nServices:\n");
+    size_t count = sizeof(services) / sizeof(services[0]);
+    for (size_t i = 0; i < count; i++) {
+        printf(" - %s\n", services[i]);
+    }
 }
-
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
-        if(argc < 4 ||
-           (strcmp(argv[1], "add") != 0 && strcmp(argv[1], "reset") != 0)) {
+        // Проверка аргументов
+        if(argc < 4 || (strcmp(argv[1], "add") != 0 && strcmp(argv[1], "reset") != 0)) {
             print_help();
-            exit(0);
+            return 0;
         }
         
-        _TCCAccessSetForBundle = 0;
-        _TCCAccessResetForBundle = 0;
+        _TCCAccessSetForBundle = NULL;
+        _TCCAccessResetForBundle = NULL;
         
+        // Динамическая загрузка TCC framework
         void *tccHandle = dlopen("/System/Library/PrivateFrameworks/TCC.framework/Versions/A/TCC", RTLD_LAZY);
-        if(tccHandle == NULL) {
-            printf("Could not open TCC framework\n");
-            exit(0);
+        if(!tccHandle) {
+            fprintf(stderr, "Could not open TCC framework\n");
+            return 1;
         }
         
         _TCCAccessSetForBundle = dlsym(tccHandle, "TCCAccessSetForBundle");
         _TCCAccessResetForBundle = dlsym(tccHandle, "TCCAccessResetForBundle");
-        dlclose(tccHandle);
         
-        if(_TCCAccessSetForBundle == 0) {
-            printf("Could not find symbol for TCCAccessSetForBundle\n");
-            exit(0);
+        if(!_TCCAccessSetForBundle || !_TCCAccessResetForBundle) {
+            fprintf(stderr, "Could not find TCC symbols\n");
+            dlclose(tccHandle);
+            return 1;
         }
         
-        if(_TCCAccessResetForBundle == 0) {
-            printf("Could not find symbol for TCCAccessResetForBundle\n");
-            exit(0);
-        }
-        
-        CFStringRef bundleId = CFStringCreateWithCString(NULL, argv[3], kCFStringEncodingMacRoman);
+        // Получение URL приложения по Bundle ID
+        CFStringRef bundleId = CFStringCreateWithCString(kCFAllocatorDefault, argv[3], kCFStringEncodingUTF8);
         CFArrayRef urls = LSCopyApplicationURLsForBundleIdentifier(bundleId, NULL);
         CFRelease(bundleId);
-        if(urls == NULL) {
-            printf("Could not locate bundle for bundle id %s\n", argv[3]);
-            exit(0);
+        
+        if(!urls || CFArrayGetCount(urls) == 0) {
+            fprintf(stderr, "Could not locate bundle for bundle id %s\n", argv[3]);
+            if(urls) CFRelease(urls);
+            dlclose(tccHandle);
+            return 1;
         }
         
-        CFURLRef bundleURL = CFArrayGetValueAtIndex(urls, 0);
+        CFURLRef bundleURL = (CFURLRef)CFArrayGetValueAtIndex(urls, 0);
         CFBundleRef bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL);
-        CFRelease(bundleURL);
         CFRelease(urls);
-        if(bundle == NULL) {
-            printf("Could not create CFBundleRef\n");
-            exit(0);
+        
+        if(!bundle) {
+            fprintf(stderr, "Could not create CFBundleRef\n");
+            dlclose(tccHandle);
+            return 1;
         }
         
-        CFStringRef serviceFormat = CFSTR("kTCCService%s");
-        CFStringRef service = CFStringCreateWithFormat(NULL, NULL, serviceFormat, argv[2]);
-        CFRelease(serviceFormat);
+        // Формирование названия сервиса (например, kTCCServiceCamera)
+        CFStringRef serviceName = CFStringCreateWithCString(kCFAllocatorDefault, argv[2], kCFStringEncodingUTF8);
+        CFStringRef service = CFStringCreateWithFormat(kCFAllocatorDefault, NULL, CFSTR("kTCCService%@"), serviceName);
+        CFRelease(serviceName);
         
         if(strcmp(argv[1], "add") == 0) {
             if(_TCCAccessSetForBundle(service, bundle) == 0) {
-                printf("Could not add %s approval status for %s\n", argv[2], argv[3]);
-            } else {
-                /* Tack on accessibility service as it seems to be a prerequisite */
-                _TCCAccessSetForBundle(CFSTR("kTCCServiceAccessibility"), bundle);
                 printf("Successfully added %s approval status for %s\n", argv[2], argv[3]);
-            }
-        }
-        
-        if(strcmp(argv[1], "reset") == 0) {
-            if(_TCCAccessResetForBundle(service, bundle) == 0) {
-                printf("Could not reset %s approval status for %s\n", argv[2], argv[3]);
+                // Добавляем Accessibility как пререквизит, если нужно
+                _TCCAccessSetForBundle(CFSTR("kTCCServiceAccessibility"), bundle);
             } else {
+                fprintf(stderr, "Could not add %s approval status for %s\n", argv[2], argv[3]);
+            }
+        } else if(strcmp(argv[1], "reset") == 0) {
+            if(_TCCAccessResetForBundle(service, bundle) == 0) {
                 printf("Successfully reset %s approval status for %s\n", argv[2], argv[3]);
+            } else {
+                fprintf(stderr, "Could not reset %s approval status for %s\n", argv[2], argv[3]);
             }
         }
         
+        // Очистка ресурсов
         CFRelease(service);
         CFRelease(bundle);
+        dlclose(tccHandle);
     }
     return 0;
 }
+
