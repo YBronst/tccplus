@@ -14,29 +14,74 @@ Services:
  - Accessibility 
  - AddressBook 
  - AppleEvents 
+ - AudioCapture
+ - BluetoothAlways
+ - BluetoothPeripheral
+ - BluetoothWhileInUse
  - Calendar 
+ - Calls
  - Camera 
+ - ContactlessAccess
  - ContactsFull 
  - ContactsLimited 
  - DeveloperTool 
- - Facebook 
- - LinkedIn 
+ - ExposureNotification
+ - FaceID
+ - FileProviderDomain
+ - FileProviderPresence
+ - FinancialData
+ - FocusStatus
+ - GameCenterFriends
+ - KeyboardNetwork
  - ListenEvent 
  - Liverpool 
  - Location 
  - MediaLibrary 
  - Microphone 
  - Motion 
+ - MSO
+ - NearbyInteraction
+ - Pasteboard
  - Photos 
  - PhotosAdd 
  - PostEvent 
  - Reminders 
+ - RemoteDesktop
  - ScreenCapture 
+ - SecureElementAccess
+ - SensorKitAmbientLightSensor
+ - SensorKitBedSensing
+ - SensorKitDeviceUsage
+ - SensorKitElevation
+ - SensorKitFacialMetrics
+ - SensorKitForegroundAppCategory
+ - SensorKitHistoricalCardioMetrics
+ - SensorKitHistoricalMobilityMetrics
+ - SensorKitKeyboardMetrics
+ - SensorKitLocationMetrics
+ - SensorKitMessageUsage
+ - SensorKitMotion
+ - SensorKitOdometer
+ - SensorKitPedometer
+ - SensorKitPhoneUsage
+ - SensorKitSoundDetection
+ - SensorKitSpeechMetrics
+ - SensorKitStrideCalibration
+ - SensorKitWatchAmbientLightSensor
+ - SensorKitWatchFallStats
+ - SensorKitWatchForegroundAppCategory
+ - SensorKitWatchHeartRate
+ - SensorKitWatchMotion
+ - SensorKitWatchOnWristState
+ - SensorKitWatchPedometer
+ - SensorKitWatchSpeechMetrics
+ - SensorKitWristTemperature
  - ShareKit 
- - SinaWeibo 
  - Siri 
  - SpeechRecognition 
  - SystemPolicyAllFiles 
+ - SystemPolicyAppBundles
+ - SystemPolicyAppData
  - SystemPolicyDesktopFolder 
  - SystemPolicyDeveloperFiles 
  - SystemPolicyDocumentsFolder 
@@ -44,9 +89,13 @@ Services:
  - SystemPolicyNetworkVolumes 
  - SystemPolicyRemovableVolumes 
  - SystemPolicySysAdminFiles 
- - TencentWeibo 
- - Twitter 
  - Ubiquity 
+ - UserAvailability
+ - UserTracking
+ - VirtualMachineNetworking
+ - VoiceBanking
+ - WebBrowserPublicKeyCredential
+ - WebKitIntelligentTrackingPrevention
  - Willow
  ```
 Usage Example:
